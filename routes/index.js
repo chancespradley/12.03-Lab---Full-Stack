@@ -18,7 +18,10 @@ router.get('/', function(req, res, next){
 });
 
 router.post('/create', function (req, res, next) {
-    const { task } = req.body;
+    const task = (req.body.task || '').trim();
+    if (task === '') {
+      return res.status(400).send('Task cannot be blank');
+    }
     try {
       req.db.query('INSERT INTO todos (task) VALUES (?);', [task], (err, results) => {
         if (err) {
@@ -50,6 +53,28 @@ router.post('/delete', function (req, res, next) {
     }catch (error) {
         console.error('Error deleting todo:', error);
         res.status(500).send('Error deleting todo:');
+    }
+});
+
+router.post('/edit', function (req, res, next) {
+    const { id } = req.body;
+    const task = (req.body.task || '').trim();
+    const completed = req.body.completed ? 1 : 0;
+    if (task === '') {
+      return res.status(400).send('Task cannot be blank');
+    }
+    try {
+      req.db.query('UPDATE todos SET task = ?, completed = ? WHERE id = ?;', [task, completed, id], (err, results) => {
+        if (err) {
+          console.error('Error editing todo:', err);
+          return res.status(500).send('Error editing todo');
+        }
+        console.log('Todo edited successfully:', results);
+        res.redirect('/');
+      });
+    } catch (error) {
+      console.error('Error editing todo:', error);
+      res.status(500).send('Error editing todo');
     }
 });
 
